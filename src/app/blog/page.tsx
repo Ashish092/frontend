@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import MainLayout from '@/components/layout/MainLayout';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -33,9 +33,10 @@ export default function BlogPage() {
                 const response = await axios.get('http://localhost:5000/api/blogs');
                 console.log('Blogs response:', response.data);
                 setBlogs(response.data);
-            } catch (err: any) {
-                console.error('Error fetching blogs:', err);
-                setError(err.response?.data?.message || 'Failed to fetch blogs');
+            } catch (err: unknown) {
+                const error = err as AxiosError<{ message: string }>;
+                console.error('Error fetching blogs:', error);
+                setError(error.response?.data?.message || 'Failed to fetch blogs');
             } finally {
                 setLoading(false);
             }

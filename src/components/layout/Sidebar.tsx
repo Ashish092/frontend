@@ -38,14 +38,6 @@ const navItems: NavItem[] = [
   }
 ]
 
-const bookingsSubmenu = [
-  { name: 'All Bookings', href: '/admin/bookings' },
-  { name: 'Manual Bookings', href: '/admin/bookings/manual' },
-  { name: 'Drafts', href: '/admin/bookings/drafts' },
-  { name: 'Invoices', href: '/admin/bookings/invoices' },
-  { name: 'Payments', href: '/admin/bookings/payments' },
-];
-
 export default function Sidebar() {
   const pathname = usePathname()
   

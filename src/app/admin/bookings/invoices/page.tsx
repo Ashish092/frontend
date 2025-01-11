@@ -1,11 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import { 
     Search, 
-    Filter,
     Download,
     Mail,
     Eye,
@@ -13,12 +12,23 @@ import {
     ArrowUpDown,
     Calendar,
     DollarSign,
-    Clock,
     CheckCircle,
     AlertCircle
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { Invoice } from '@/types/invoice';
+
+interface Invoice {
+    _id: string;
+    invoiceNo: string;
+    createdAt: string;
+    dueDate: string;
+    total: number;
+    status: 'paid' | 'unpaid' | 'overdue';
+    customer: {
+        name: string;
+        email: string;
+    };
+}
 
 export default function BookingInvoicesPage() {
     const router = useRouter();
@@ -27,7 +37,7 @@ export default function BookingInvoicesPage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
     const [dateFilter, setDateFilter] = useState('');
-    const [sortField, setSortField] = useState('createdAt');
+    const [sortField, setSortField] = useState<keyof Invoice>('createdAt');
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
     useEffect(() => {
@@ -46,13 +56,14 @@ export default function BookingInvoicesPage() {
                 setInvoices(response.data.data);
             }
         } catch (error) {
+            console.error('Failed to fetch invoices:', error);
             toast.error('Failed to fetch invoices');
         } finally {
             setLoading(false);
         }
     };
 
-    const handleSort = (field: string) => {
+    const handleSort = (field: keyof Invoice) => {
         if (sortField === field) {
             setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
         } else {
@@ -85,6 +96,7 @@ export default function BookingInvoicesPage() {
             toast.success('Invoice sent successfully');
             fetchInvoices();
         } catch (error) {
+            console.error('Failed to send invoice:', error);
             toast.error('Failed to send invoice');
         }
     };
@@ -108,26 +120,53 @@ export default function BookingInvoicesPage() {
             link.click();
             link.remove();
         } catch (error) {
+            console.error('Failed to download invoice:', error);
             toast.error('Failed to download invoice');
         }
     };
 
-    const filteredInvoices = invoices.filter(invoice => {
-        const searchMatch = 
-            invoice.invoiceNo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            invoice.customer.name.toLowerCase().includes(searchTerm.toLowerCase());
-        
-        const statusMatch = !statusFilter || invoice.status === statusFilter;
-        
-        const dateMatch = !dateFilter || new Date(invoice.createdAt).toISOString().split('T')[0] === dateFilter;
+    const filteredInvoices = useMemo(() => {
+        return [...invoices].filter(invoice => {
+            const searchMatch = 
+                invoice.invoiceNo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                invoice.customer.name.toLowerCase().includes(searchTerm.toLowerCase());
+            
+            const statusMatch = !statusFilter || invoice.status === statusFilter;
+            
+            const dateMatch = !dateFilter || new Date(invoice.createdAt).toISOString().split('T')[0] === dateFilter;
 
-        return searchMatch && statusMatch && dateMatch;
-    }).sort((a, b) => {
-        const aValue = a[sortField as keyof Invoice];
-        const bValue = b[sortField as keyof Invoice];
-        const order = sortOrder === 'asc' ? 1 : -1;
-        return aValue > bValue ? order : -order;
-    });
+            return searchMatch && statusMatch && dateMatch;
+        }).sort((a, b) => {
+            const aValue = a[sortField];
+            const bValue = b[sortField];
+
+            // Handle undefined values
+            if (aValue === undefined && bValue === undefined) return 0;
+            if (aValue === undefined) return 1;
+            if (bValue === undefined) return -1;
+
+            const order = sortOrder === 'asc' ? 1 : -1;
+
+            // Type guard for comparison
+            if (typeof aValue === 'string' && typeof bValue === 'string') {
+                return aValue.localeCompare(bValue) * order;
+            }
+
+            // For number comparisons
+            if (typeof aValue === 'number' && typeof bValue === 'number') {
+                return (aValue > bValue ? 1 : -1) * order;
+            }
+
+            // For date strings
+            if (sortField === 'createdAt' || sortField === 'dueDate') {
+                const dateA = new Date(aValue as string).getTime();
+                const dateB = new Date(bValue as string).getTime();
+                return (dateA > dateB ? 1 : -1) * order;
+            }
+
+            return 0;
+        });
+    }, [invoices, searchTerm, statusFilter, dateFilter, sortField, sortOrder]);
 
     const totalAmount = filteredInvoices.reduce((sum, invoice) => sum + invoice.total, 0);
     const paidAmount = filteredInvoices

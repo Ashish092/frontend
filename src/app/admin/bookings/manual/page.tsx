@@ -1,11 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import { 
-  Plus, Search, Filter, ArrowUpDown, Eye, Edit, Trash2, 
-  Calendar, MapPin, DollarSign 
+  Plus, Search, ArrowUpDown, Eye, Edit, Trash2 
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -43,29 +42,7 @@ export default function ManualBookingsPage() {
   const [sortField, setSortField] = useState<'date' | 'name' | 'amount'>('date');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
-  useEffect(() => {
-    fetchBookings();
-  }, []);
-
-  useEffect(() => {
-    filterAndSortBookings();
-  }, [searchTerm, statusFilter, sortField, sortDirection, bookings]);
-
-  const fetchBookings = async () => {
-    try {
-      const token = localStorage.getItem('adminToken');
-      const response = await axios.get('http://localhost:5000/api/manual-bookings', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setBookings(response.data);
-      setLoading(false);
-    } catch (err) {
-      toast.error('Failed to load bookings');
-      setLoading(false);
-    }
-  };
-
-  const filterAndSortBookings = () => {
+  const filterAndSortBookings = useCallback(() => {
     let filtered = [...bookings];
 
     // Apply search
@@ -101,6 +78,30 @@ export default function ManualBookingsPage() {
     });
 
     setFilteredBookings(filtered);
+  }, [bookings, searchTerm, statusFilter, sortField, sortDirection]);
+
+  useEffect(() => {
+    fetchBookings();
+  }, []);
+
+  useEffect(() => {
+    filterAndSortBookings();
+  }, [filterAndSortBookings]);
+
+  const fetchBookings = async () => {
+    try {
+      const token = localStorage.getItem('adminToken');
+      const response = await axios.get('http://localhost:5000/api/manual-bookings', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setBookings(response.data);
+      setLoading(false);
+    } catch (err) {
+      toast.error('Failed to load bookings');
+      console.error('Failed to load bookings', err);
+      
+      setLoading(false);
+    }
   };
 
   const calculateTotalAmount = (booking: ManualBooking) => {
@@ -130,7 +131,9 @@ export default function ManualBookingsPage() {
         toast.success('Booking deleted successfully');
         fetchBookings();
       } catch (error) {
+        console.error('Failed to delete booking', error);
         toast.error('Failed to delete booking');
+
       }
     }
   };

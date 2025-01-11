@@ -1,11 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import { 
-  Search, Filter, ArrowUpDown, Eye, Edit, Trash2, 
-  Calendar, MapPin, DollarSign 
+  Search, ArrowUpDown, Eye, Edit 
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -36,6 +35,34 @@ interface OnlineBooking {
   totalAmount: number;
 }
 
+// Add this interface for the raw data from the API
+interface RawBookingData {
+  _id: string;
+  customer?: {
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    phone?: string;
+  };
+  suburb?: {
+    name?: string;
+    city?: string;
+  };
+  schedule?: {
+    date?: string;
+    time?: string;
+  };
+  service?: {
+    title?: string;
+    price?: number;
+    extras?: Array<{
+      name: string;
+      price: number;
+    }>;
+  };
+  status?: string;
+}
+
 export default function OnlineBookingsPage() {
   const router = useRouter();
   const [bookings, setBookings] = useState<OnlineBooking[]>([]);
@@ -46,57 +73,7 @@ export default function OnlineBookingsPage() {
   const [sortField, setSortField] = useState<'date' | 'name' | 'amount'>('date');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
-  useEffect(() => {
-    fetchBookings();
-  }, []);
-
-  useEffect(() => {
-    filterAndSortBookings();
-  }, [searchTerm, statusFilter, sortField, sortDirection, bookings]);
-
-  const fetchBookings = async () => {
-    try {
-      const token = localStorage.getItem('adminToken');
-      const response = await axios.get('http://localhost:5000/api/jobs', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      
-      // Transform the data to match our interface
-      const transformedBookings = response.data.map((booking: any) => ({
-        _id: booking._id,
-        customer: {
-          name: `${booking.customer?.firstName || ''} ${booking.customer?.lastName || ''}`.trim(),
-          email: booking.customer?.email || '',
-          phone: booking.customer?.phone || ''
-        },
-        address: {
-          suburb: booking.suburb?.name || '',
-          city: booking.suburb?.city || ''
-        },
-        schedule: {
-          date: booking.schedule?.date || '',
-          time: booking.schedule?.time || ''
-        },
-        service: {
-          name: booking.service?.title || '',
-          price: booking.service?.price || 0,
-          extras: booking.service?.extras || []
-        },
-        status: booking.status || 'pending',
-        totalAmount: booking.service?.price || 0
-      }));
-
-      setBookings(transformedBookings);
-      setFilteredBookings(transformedBookings);
-      setLoading(false);
-    } catch (err) {
-      console.error('Error loading bookings:', err);
-      toast.error('Failed to load online bookings');
-      setLoading(false);
-    }
-  };
-
-  const filterAndSortBookings = () => {
+  const filterAndSortBookings = useCallback(() => {
     let filtered = [...bookings];
 
     // Apply search
@@ -130,6 +107,56 @@ export default function OnlineBookingsPage() {
     });
 
     setFilteredBookings(filtered);
+  }, [bookings, searchTerm, statusFilter, sortField, sortDirection]);
+
+  useEffect(() => {
+    fetchBookings();
+  }, []);
+
+  useEffect(() => {
+    filterAndSortBookings();
+  }, [filterAndSortBookings]);
+
+  const fetchBookings = async () => {
+    try {
+      const token = localStorage.getItem('adminToken');
+      const response = await axios.get('http://localhost:5000/api/jobs', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      // Transform the data to match our interface
+      const transformedBookings = response.data.map((booking: RawBookingData) => ({
+        _id: booking._id,
+        customer: {
+          name: `${booking.customer?.firstName || ''} ${booking.customer?.lastName || ''}`.trim(),
+          email: booking.customer?.email || '',
+          phone: booking.customer?.phone || ''
+        },
+        address: {
+          suburb: booking.suburb?.name || '',
+          city: booking.suburb?.city || ''
+        },
+        schedule: {
+          date: booking.schedule?.date || '',
+          time: booking.schedule?.time || ''
+        },
+        service: {
+          name: booking.service?.title || '',
+          price: booking.service?.price || 0,
+          extras: booking.service?.extras || []
+        },
+        status: booking.status || 'pending',
+        totalAmount: booking.service?.price || 0
+      }));
+
+      setBookings(transformedBookings);
+      setFilteredBookings(transformedBookings);
+      setLoading(false);
+    } catch (err) {
+      console.error('Error loading bookings:', err);
+      toast.error('Failed to load online bookings');
+      setLoading(false);
+    }
   };
 
   const handleSort = (field: 'date' | 'name' | 'amount') => {

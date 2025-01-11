@@ -103,6 +103,43 @@ interface BookingFormProps {
     initialData?: BookingFormData;
 }
 
+interface ApiError {
+    response?: {
+        data?: {
+            message?: string;
+        };
+    };
+    message: string;
+}
+
+// Add a more specific type for nested form data
+type NestedRecord = Record<string, FormFieldValue>;
+
+// Add a type for extra field updates
+type ExtraFieldValue = string | number;
+
+// Add a type for the form field values
+type FormFieldValue = string | number | boolean;
+
+interface FormDataUpdate {
+    name: string;
+    email: string;
+    phone: string;
+    street?: string;
+    suburb?: string;
+    city?: string;
+    state?: string;
+    postcode?: string;
+}
+
+interface CustomServiceData {
+    serviceName: string;
+    duration: string;
+    price: string;
+}
+
+type ServiceFieldValue = string | number | boolean;
+
 export default function BookingForm({ id, initialData }: BookingFormProps) {
     const router = useRouter();
     const [saving, setSaving] = useState(false);
@@ -161,10 +198,9 @@ export default function BookingForm({ id, initialData }: BookingFormProps) {
     });
     const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
     const [services, setServices] = useState<AdminService[]>([]);
-    const [selectedService, setSelectedService] = useState<AdminService | null>(null);
+    
     const [showCustomServiceModal, setShowCustomServiceModal] = useState(false);
-    const [searchTerm, setSearchTerm] = useState('');
-
+    
     useEffect(() => {
         if (initialData) {
             setFormData(initialData);
@@ -199,7 +235,7 @@ export default function BookingForm({ id, initialData }: BookingFormProps) {
             setFormData(prev => ({
                 ...prev,
                 [parent]: {
-                    ...(prev[parent as keyof BookingFormData] as Record<string, any>),
+                    ...(prev[parent as keyof BookingFormData] as NestedRecord),
                     [child]: value
                 }
             }));
@@ -208,19 +244,7 @@ export default function BookingForm({ id, initialData }: BookingFormProps) {
         }
     };
 
-    const calculateAmount = () => {
-        const baseRate = 40; // $40 per hour
-        const amount = formData.services.reduce((total, service) => {
-            return total + (service.hours * baseRate);
-        }, 0);
-        setFormData(prev => ({
-            ...prev,
-            services: prev.services.map(service => ({
-                ...service,
-                amount
-            }))
-        }));
-    };
+    
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -248,9 +272,10 @@ export default function BookingForm({ id, initialData }: BookingFormProps) {
                 toast.success(id ? 'Booking updated successfully' : 'Manual booking created successfully');
                 router.push('/admin/bookings/manual');
             }
-        } catch (error: any) {
+        } catch (err: unknown) {
+            const error = err as ApiError;
             console.error('Error saving booking:', error);
-            toast.error(error.response?.data?.message || `Failed to ${id ? 'update' : 'create'} booking`);
+            toast.error(error.response?.data?.message || error.message || 'Failed to save booking');
         } finally {
             setSaving(false);
         }
@@ -258,19 +283,30 @@ export default function BookingForm({ id, initialData }: BookingFormProps) {
 
     const handleContactSelect = (contact: Contact) => {
         setSelectedContact(contact);
+        const formDataUpdate: FormDataUpdate = {
+            name: `${contact.firstName} ${contact.lastName}`,
+            email: contact.email || '',
+            phone: contact.phone || '',
+            street: contact.address?.street || '',
+            suburb: contact.address?.suburb || '',
+            city: contact.address?.city || '',
+            state: contact.address?.state || '',
+            postcode: contact.address?.postcode || ''
+        };
+
         setFormData(prev => ({
             ...prev,
             customer: {
-                name: `${contact.firstName} ${contact.lastName}`,
-                email: contact.email || '',
-                phone: contact.phone || ''
+                name: formDataUpdate.name,
+                email: formDataUpdate.email,
+                phone: formDataUpdate.phone
             },
             address: {
-                street: contact.address?.street || '',
-                suburb: contact.address?.suburb || '',
-                city: contact.address?.city || '',
-                state: contact.address?.state || '',
-                postcode: contact.address?.postcode || ''
+                street: formDataUpdate.street || '',
+                suburb: formDataUpdate.suburb || '',
+                city: formDataUpdate.city || '',
+                state: formDataUpdate.state || '',
+                postcode: formDataUpdate.postcode || ''
             }
         }));
     };
@@ -294,51 +330,77 @@ export default function BookingForm({ id, initialData }: BookingFormProps) {
         }));
     };
 
-    const handleServiceSelect = (serviceId: string) => {
-        const service = services.find(s => s._id === serviceId);
-        if (service) {
-            const newService = {
+    const handleServiceSelect = async (serviceId: string) => {
+        try {
+            const token = localStorage.getItem('adminToken');
+            const response = await axios.get(
+                `http://localhost:5000/api/services/${serviceId}`,
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+
+            const service = response.data;
+            const bookingService: BookingService = {
                 serviceId: service._id,
                 name: service.name,
                 hours: service.duration,
                 amount: service.basePrice,
-                extras: service.extras.map(extra => ({
-                    name: extra.name,
-                    price: extra.price
-                }))
+                extras: []
             };
 
             setFormData(prev => ({
                 ...prev,
-                services: [...prev.services, newService]
+                services: [...prev.services, bookingService]
             }));
+        } catch (err: unknown) {
+            const error = err as ApiError;
+            console.error('Error fetching service:', error);
+            toast.error(error.response?.data?.message || error.message || 'Failed to add service');
         }
     };
 
-    const handleAddCustomService = (e: React.FormEvent<HTMLFormElement>) => {
+    const handleAddCustomService = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         const form = e.currentTarget;
         const formData = new FormData(form);
+        
+        try {
+            const customData: CustomServiceData = {
+                serviceName: formData.get('serviceName') as string,
+                duration: formData.get('duration') as string,
+                price: formData.get('price') as string
+            };
 
-        const newService = {
-            serviceId: `custom-${Date.now()}`,
-            name: formData.get('serviceName') as string,
-            hours: Number(formData.get('duration')),
-            amount: Number(formData.get('price')),
-            extras: [],
-            isCustom: true
-        };
+            if (!customData.serviceName || !customData.duration || !customData.price) {
+                throw new Error('All fields are required');
+            }
 
-        setFormData(prev => ({
-            ...prev,
-            services: [...prev.services, newService]
-        }));
+            const customService: BookingService = {
+                serviceId: 'custom',
+                name: customData.serviceName,
+                hours: parseFloat(customData.duration),
+                amount: parseFloat(customData.price),
+                extras: [],
+                isCustom: true
+            };
 
-        setShowCustomServiceModal(false);
-        form.reset();
+            setFormData(prev => ({
+                ...prev,
+                services: [...prev.services, customService]
+            }));
+            setShowCustomServiceModal(false);
+            form.reset();
+        } catch (err: unknown) {
+            const error = err as Error;
+            console.error('Error adding custom service:', error);
+            toast.error(error.message || 'Failed to add custom service');
+        }
     };
 
-    const updateServiceField = (index: number, field: keyof BookingService, value: any) => {
+    const updateServiceField = (
+        index: number, 
+        field: keyof BookingService, 
+        value: ServiceFieldValue
+    ) => {
         setFormData(prev => {
             const updatedServices = [...prev.services];
             updatedServices[index] = {
@@ -356,13 +418,18 @@ export default function BookingForm({ id, initialData }: BookingFormProps) {
         serviceIndex: number, 
         extraIndex: number, 
         field: keyof ServiceExtra, 
-        value: string | number
+        value: ExtraFieldValue
     ) => {
         setFormData(prev => {
             const updatedServices = [...prev.services];
-            updatedServices[serviceIndex].extras[extraIndex] = {
-                ...updatedServices[serviceIndex].extras[extraIndex],
+            const updatedExtras = [...updatedServices[serviceIndex].extras];
+            updatedExtras[extraIndex] = {
+                ...updatedExtras[extraIndex],
                 [field]: value
+            };
+            updatedServices[serviceIndex] = {
+                ...updatedServices[serviceIndex],
+                extras: updatedExtras
             };
             return {
                 ...prev,
@@ -1588,11 +1655,3 @@ export default function BookingForm({ id, initialData }: BookingFormProps) {
     );
 }
 
-const calculateTotalAmount = (selectedExtras: string[], selectedService: AdminService) => {
-    const baseAmount = selectedService.basePrice;
-    const extrasAmount = selectedService.extras
-        .filter(extra => selectedExtras.includes(extra.name))
-        .reduce((sum, extra) => sum + extra.price, 0);
-    
-    return baseAmount + extrasAmount;
-}; 

@@ -5,32 +5,24 @@ import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 import { 
-    LayoutDashboard,
-    FileQuestion,
+    LayoutDashboard,    
     Calendar,
     Users,
-    Settings,
-    LogOut,
+    Settings,    
     Menu,
     X,
-    Globe,
-    DollarSign,
-    FileText,
-    Briefcase,
+    Globe,    
     Bell,
-    ChevronDown,
-    UserPlus,
-    BookOpen,
-    FileEdit,
-    Receipt,
-    CreditCard,
-    MessageSquare
+    ChevronDown,    
+    BookOpen,    
+    MessageSquare,
+    LucideIcon
 } from 'lucide-react';
 
 interface NavItem {
     label: string;
     href?: string;
-    icon?: any;
+    icon?: LucideIcon;
     subItems?: NavItem[];
 }
 

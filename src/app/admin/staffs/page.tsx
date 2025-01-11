@@ -2,10 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import { 
-    Search, 
-    Filter, 
+    Search,    
     UserPlus, 
     Edit2, 
     Trash2, 
@@ -24,10 +23,8 @@ interface Staff {
     phone: string;
     title: string;
     department: string[];
-    status: string;
     kioskCode: string;
-    employmentStartDate: string;
-    lastLogin: string;
+    status: 'active' | 'inactive' | 'on_leave';
 }
 
 export default function StaffsPage() {
@@ -37,8 +34,8 @@ export default function StaffsPage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
     const [departmentFilter, setDepartmentFilter] = useState('');
-    const [page, setPage] = useState(1);
-    const [totalPages, setTotalPages] = useState(1);
+    const [page] = useState(1);
+    
 
     useEffect(() => {
         fetchStaffs();
@@ -55,8 +52,10 @@ export default function StaffsPage() {
             if (response.data.success) {
                 setStaffs(response.data.data);
             }
-        } catch (error) {
-            toast.error('Failed to fetch staff members');
+        } catch (err) {
+            const error = err as AxiosError<{ message: string }>;
+            console.error('Failed to fetch staff members:', error);
+            toast.error(error.response?.data?.message || 'Failed to fetch staff members');
         } finally {
             setLoading(false);
         }
@@ -75,8 +74,10 @@ export default function StaffsPage() {
                     toast.success('Staff member deleted successfully');
                     fetchStaffs();
                 }
-            } catch (error) {
-                toast.error('Failed to delete staff member');
+            } catch (err) {
+                const error = err as AxiosError<{ message: string }>;
+                console.error('Failed to delete staff member:', error);
+                toast.error(error.response?.data?.message || 'Failed to delete staff member');
             }
         }
     };

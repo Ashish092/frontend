@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import { 
     Pencil, 
     Trash2, 
@@ -54,9 +54,10 @@ export default function AdminBlogPage() {
             });
             setBlogs(response.data);
             setError(null);
-        } catch (err: any) {
-            console.error('Error fetching blogs:', err);
-            setError(err.response?.data?.message || 'Failed to fetch blogs');
+        } catch (err: unknown) {
+            const error = err as AxiosError<{ message: string }>;
+            setError(error.response?.data?.message || 'Failed to fetch blogs');
+            console.error('Failed to fetch blogs:', error);
         } finally {
             setLoading(false);
         }
@@ -71,6 +72,7 @@ export default function AdminBlogPage() {
             }
             return url;
         } catch (error) {
+            console.error('Error converting Google Drive link:', error);
             return url;
         }
     };
@@ -97,8 +99,10 @@ export default function AdminBlogPage() {
             fetchBlogs();
             resetForm();
             setError(null);
-        } catch (err: any) {
-            setError(err.response?.data?.message || 'Failed to save blog');
+        } catch (err: unknown) {
+            const error = err as AxiosError<{ message: string }>;
+            setError(error.response?.data?.message || 'Failed to save blog');
+            console.error('Failed to save blog:', error);
         }
     };
 
@@ -112,8 +116,10 @@ export default function AdminBlogPage() {
             });
             fetchBlogs();
             setError(null);
-        } catch (err: any) {
-            setError(err.response?.data?.message || 'Failed to delete blog');
+        } catch (err: unknown) {
+            const error = err as AxiosError<{ message: string }>;
+            setError(error.response?.data?.message || 'Failed to delete blog');
+            console.error('Failed to delete blog:', error);
         }
     };
 
@@ -243,7 +249,7 @@ export default function AdminBlogPage() {
                             <div className="mt-2 text-sm text-gray-500">
                                 Tip: Use HTML tags to style your content. Examples:
                                 <code className="ml-2 text-xs bg-gray-100 p-1 rounded">
-                                    &lt;h2&gt;, &lt;p&gt;, &lt;strong&gt;, &lt;em&gt;, &lt;ul&gt;, &lt;li&gt;, &lt;a href=""&gt;
+                                    &lt;h2&gt;, &lt;p&gt;, &lt;strong&gt;, &lt;em&gt;, &lt;ul&gt;, &lt;li&gt;, &lt;a href=&quot;&quot;&gt;
                                 </code>
                             </div>
                         </div>

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 
 export default function AdminLoginPage() {
     const router = useRouter();
@@ -27,9 +27,10 @@ export default function AdminLoginPage() {
             } else {
                 setError('Invalid credentials');
             }
-        } catch (err: any) {
-            console.error('Login error:', err);
-            setError(err.response?.data?.message || 'Login failed');
+        } catch (err) {
+            const error = err as AxiosError<{ message: string }>;
+            console.error('Login error:', error);
+            setError(error.response?.data?.message || 'Login failed');
         } finally {
             setLoading(false);
         }

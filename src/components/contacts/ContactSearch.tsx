@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
-import axios from 'axios';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import axios, { AxiosError } from 'axios';
 import { Search, Plus, User } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import debounce from 'lodash/debounce';
 import { Contact } from '@/types/contact';
+import Image from 'next/image';
 
 interface ContactSearchProps {
     onSelect: (contact: Contact) => void;
@@ -20,41 +21,54 @@ export default function ContactSearch({ onSelect }: ContactSearchProps) {
     const [error, setError] = useState('');
     const dropdownRef = useRef<HTMLDivElement>(null);
 
-    // Debounced search function
-    const debouncedSearch = useCallback(
-        debounce(async (term: string) => {
-            if (!term) {
-                setContacts([]);
-                return;
-            }
+    // First, create a stable search function
+    const performSearch = useCallback(async (term: string) => {
+        if (!term) {
+            setContacts([]);
+            return;
+        }
 
-            try {
-                setLoading(true);
-                setError('');
-                const token = localStorage.getItem('adminToken');
-                const response = await axios.get(
-                    `http://localhost:5000/api/contacts/search?q=${term}`,
-                    { headers: { Authorization: `Bearer ${token}` } }
-                );
-                
-                if (response.data.success) {
-                    setContacts(response.data.data);
-                    setShowDropdown(true);
-                }
-            } catch (error) {
-                console.error('Failed to search contacts:', error);
-                setError('Failed to search contacts');
-                setContacts([]);
-            } finally {
-                setLoading(false);
+        try {
+            setLoading(true);
+            setError('');
+            const token = localStorage.getItem('adminToken');
+            const response = await axios.get(
+                `http://localhost:5000/api/contacts/search?q=${term}`,
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            
+            if (response.data.success) {
+                setContacts(response.data.data);
+                setShowDropdown(true);
             }
+        } catch (err: unknown) {
+            const error = err as AxiosError;
+            console.error('Failed to search contacts:', error);
+            setError('Failed to search contacts');
+            setContacts([]);
+        } finally {
+            setLoading(false);
+        }
+    }, []); // Empty dependency array since we're using function closures
+
+    // Then, create the debounced version using useMemo instead of useCallback
+    const debouncedSearch = useMemo(
+        () => debounce((term: string) => {
+            performSearch(term);
         }, 300),
-        []
+        [performSearch]
     );
 
+    // Clean up the debounced function
+    useEffect(() => {
+        return () => {
+            debouncedSearch.cancel();
+        };
+    }, [debouncedSearch]);
+
+    // Use the debounced search
     useEffect(() => {
         debouncedSearch(searchTerm);
-        return () => debouncedSearch.cancel();
     }, [searchTerm, debouncedSearch]);
 
     useEffect(() => {
@@ -123,10 +137,12 @@ export default function ContactSearch({ onSelect }: ContactSearchProps) {
                                 onClick={() => handleSelect(contact)}
                             >
                                 {contact.avatar ? (
-                                    <img 
-                                        src={contact.avatar} 
-                                        alt={contact.name}
-                                        className="w-8 h-8 rounded-full"
+                                    <Image 
+                                        src={contact.avatar}
+                                        alt={`${contact.firstName} ${contact.lastName}`}
+                                        width={32}
+                                        height={32}
+                                        className="rounded-full"
                                     />
                                 ) : (
                                     <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">

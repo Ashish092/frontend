@@ -42,14 +42,17 @@ function DetailItem({ icon, label, value }: DetailItemProps) {
   )
 }
 
+interface ApiError {
+    message: string;
+}
+
 export default function BookingConfirmation() {
   const router = useRouter()
   const [booking, setBooking] = useState<BookingData | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [reference] = useState(`BOOK-${Math.random().toString(36).substr(2, 9).toUpperCase()}`)
   const [isSaving, setIsSaving] = useState(false)
-  const [bookingNo, setBookingNo] = useState(`BK${Date.now()}${Math.floor(Math.random() * 1000)}`);
-
+  
   useEffect(() => {
     try {
       const getLocalStorageItem = (key: string) => {
@@ -99,7 +102,7 @@ export default function BookingConfirmation() {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            bookingNo,
+            
             reference,
             service: booking.service,
             suburb: booking.suburb,
@@ -128,10 +131,10 @@ export default function BookingConfirmation() {
         localStorage.removeItem('selectedService');
         localStorage.removeItem('selectedSuburb');
 
-      } catch (error: any) {
+      } catch (err: unknown) {
+        const error = err as ApiError;
         console.error('Error saving booking:', error);
-        setError('Failed to save your booking. Please try again.');
-        throw error;
+        setError(error.message || 'Failed to save your booking');
       } finally {
         setIsSaving(false);
       }
@@ -143,7 +146,7 @@ export default function BookingConfirmation() {
         setError('Failed to save your booking. Please try again.');
       });
     }
-  }, [booking, reference, bookingNo]);
+  }, [booking, reference]);
 
   const formatDate = (dateStr: string) => {
     try {

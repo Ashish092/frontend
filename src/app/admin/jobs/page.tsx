@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import { 
     Search, 
-    Filter, 
     Plus,
     Mail,
     Phone,
@@ -45,7 +44,6 @@ interface Booking {
 export default function BookingsPage() {
     const router = useRouter();
     const [bookings, setBookings] = useState<Booking[]>([]);
-    const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
     const [sortField, setSortField] = useState('schedule.date');
@@ -67,9 +65,8 @@ export default function BookingsPage() {
                 setBookings(response.data.data);
             }
         } catch (error) {
+            console.error('Failed to fetch bookings:', error);
             toast.error('Failed to fetch bookings');
-        } finally {
-            setLoading(false);
         }
     };
 

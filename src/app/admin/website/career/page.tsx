@@ -1,18 +1,31 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import { 
     Pencil, 
     Trash2, 
-    Plus, 
-    X, 
-    Check, 
+    X,     
     Loader2
 } from 'lucide-react';
 
 interface Career {
     _id: string;
+    title: string;
+    location: string;
+    type: string;
+    salary: string;
+    department: string;
+    description: string;
+    requirements: string[];
+    responsibilities: string[];
+    benefits: string[];
+    isActive: boolean;
+}
+
+type ArrayField = 'requirements' | 'responsibilities' | 'benefits';
+
+interface CareerFormData {
     title: string;
     location: string;
     type: string;
@@ -32,7 +45,7 @@ export default function AdminCareersPage() {
     const [showAddForm, setShowAddForm] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
 
-    const [formData, setFormData] = useState({
+    const [formData, setFormData] = useState<CareerFormData>({
         title: '',
         location: '',
         type: 'Full-time',
@@ -60,9 +73,10 @@ export default function AdminCareersPage() {
             });
             setCareers(response.data);
             setError(null);
-        } catch (err: any) {
-            console.error('Error fetching careers:', err);
-            setError(err.response?.data?.message || 'Failed to fetch careers');
+        } catch (err: unknown) {
+            const error = err as AxiosError<{ message: string }>;
+            console.error('Error fetching careers:', error);
+            setError(error.response?.data?.message || 'Failed to fetch careers');
         } finally {
             setLoading(false);
         }
@@ -85,8 +99,10 @@ export default function AdminCareersPage() {
             fetchCareers();
             resetForm();
             setError(null);
-        } catch (err: any) {
-            setError(err.response?.data?.message || 'Failed to save career');
+        } catch (err: unknown) {
+            const error = err as AxiosError<{ message: string }>;
+            setError(error.response?.data?.message || 'Failed to save career');
+            console.error('Failed to save career:', error);
         }
     };
 
@@ -100,8 +116,10 @@ export default function AdminCareersPage() {
             });
             fetchCareers();
             setError(null);
-        } catch (err: any) {
-            setError(err.response?.data?.message || 'Failed to delete career');
+        } catch (err: unknown) {
+            const error = err as AxiosError<{ message: string }>;
+            setError(error.response?.data?.message || 'Failed to delete career');
+            console.error('Failed to delete career:', error);
         }
     };
 
@@ -141,7 +159,7 @@ export default function AdminCareersPage() {
     };
 
     const handleArrayInput = (
-        field: 'requirements' | 'responsibilities' | 'benefits',
+        field: ArrayField,
         index: number,
         value: string
     ) => {
@@ -151,19 +169,21 @@ export default function AdminCareersPage() {
         }));
     };
 
-    const addArrayItem = (field: 'requirements' | 'responsibilities' | 'benefits') => {
+    const addArrayItem = (field: ArrayField) => {
         setFormData(prev => ({
             ...prev,
             [field]: [...prev[field], '']
         }));
     };
 
-    const removeArrayItem = (field: 'requirements' | 'responsibilities' | 'benefits', index: number) => {
+    const removeArrayItem = (field: ArrayField, index: number) => {
         setFormData(prev => ({
             ...prev,
             [field]: prev[field].filter((_, i) => i !== index)
         }));
     };
+
+    const arrayFields: ArrayField[] = ['requirements', 'responsibilities', 'benefits'];
 
     return (
         <div className="max-w-4xl mx-auto p-6">
@@ -259,21 +279,23 @@ export default function AdminCareersPage() {
                         </div>
 
                         {/* Dynamic Arrays */}
-                        {['requirements', 'responsibilities', 'benefits'].map((field) => (
-                            <div key={field}>
-                                <label className="block mb-1 font-medium capitalize">{field}</label>
-                                {(formData[field as keyof typeof formData] as string[]).map((item: string, index: number) => (
-                                    <div key={index} className="flex gap-2 mb-2">
+                        {arrayFields.map((field) => (
+                            <div key={field} className="space-y-2">
+                                <label className="block font-medium capitalize">
+                                    {field}
+                                </label>
+                                {formData[field].map((item, index) => (
+                                    <div key={index} className="flex gap-2">
                                         <input
                                             type="text"
                                             value={item}
-                                            onChange={e => handleArrayInput(field as any, index, e.target.value)}
+                                            onChange={(e) => handleArrayInput(field, index, e.target.value)}
                                             className="flex-1 p-2 border rounded"
-                                            required={field !== 'benefits'}
+                                            placeholder={`Add ${field.slice(0, -1)}`}
                                         />
                                         <button
                                             type="button"
-                                            onClick={() => removeArrayItem(field as any, index)}
+                                            onClick={() => removeArrayItem(field, index)}
                                             className="text-red-500 hover:text-red-700"
                                         >
                                             <X size={20} />
@@ -282,7 +304,7 @@ export default function AdminCareersPage() {
                                 ))}
                                 <button
                                     type="button"
-                                    onClick={() => addArrayItem(field as any)}
+                                    onClick={() => addArrayItem(field)}
                                     className="text-blue-500 hover:text-blue-700 text-sm"
                                 >
                                     + Add {field.slice(0, -1)}

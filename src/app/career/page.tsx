@@ -4,7 +4,7 @@ import MainLayout from '@/components/layout/MainLayout'
 import Image from 'next/image'
 import { Briefcase, MapPin, Clock, DollarSign, Search } from 'lucide-react'
 import { useState, useEffect } from 'react'
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 
 interface Career {
   _id: string;
@@ -38,8 +38,10 @@ export default function CareerPage() {
         const response = await axios.get('http://localhost:5000/api/careers');
         setCareers(response.data);
         setError(null);
-      } catch (err: any) {
-        setError(err.response?.data?.message || 'Failed to fetch careers');
+      } catch (err: unknown) {
+        const error = err as AxiosError<{ message: string }>;
+        setError(error.response?.data?.message || 'Failed to fetch careers');
+        console.error('Error fetching careers:', error);
       } finally {
         setLoading(false);
       }

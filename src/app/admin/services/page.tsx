@@ -54,6 +54,7 @@ export default function AdminServicesPage() {
                 setServices(response.data.data);
             }
         } catch (error) {
+            console.error('Failed to fetch services:', error);
             toast.error('Failed to fetch services');
         } finally {
             setLoading(false);
@@ -74,6 +75,7 @@ export default function AdminServicesPage() {
             toast.success('Service deleted successfully');
             fetchServices();
         } catch (error) {
+            console.error('Failed to delete service:', error);
             toast.error('Failed to delete service');
         }
     };

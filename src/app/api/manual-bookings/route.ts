@@ -10,6 +10,7 @@ export async function GET() {
     });
     return NextResponse.json(response.data);
   } catch (error) {
+    console.error('Failed to fetch manual bookings:', error);
     return NextResponse.json({ error: 'Failed to fetch manual bookings' }, { status: 500 });
   }
 } 

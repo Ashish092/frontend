@@ -35,8 +35,9 @@ export default function AdminFAQPage() {
         try {
             const response = await axios.get('http://localhost:5000/api/faqs');
             setFaqs(response.data.sort((a: FAQ, b: FAQ) => a.order - b.order));
-        } catch (err) {
+        } catch (error) {
             setError('Failed to fetch FAQs');
+            console.error('Failed to fetch FAQs:', error);
         } finally {
             setLoading(false);
         }
@@ -49,8 +50,9 @@ export default function AdminFAQPage() {
             setShowAddForm(false);
             resetForm();
             fetchFaqs();
-        } catch (err) {
+        } catch (error) {
             setError('Failed to add FAQ');
+            console.error('Failed to add FAQ:', error);
         }
     };
 
@@ -63,8 +65,9 @@ export default function AdminFAQPage() {
                 await axios.put(`http://localhost:5000/api/faqs/${id}`, formData);
                 setEditingId(null);
                 fetchFaqs();
-            } catch (err) {
+            } catch (error) {
                 setError('Failed to update FAQ');
+                console.error('Failed to update FAQ:', error);
             }
         } else {
             const faq = faqs.find(f => f._id === id);
@@ -85,8 +88,9 @@ export default function AdminFAQPage() {
             try {
                 await axios.delete(`http://localhost:5000/api/faqs/${id}`);
                 fetchFaqs();
-            } catch (err) {
+            } catch (error) {
                 setError('Failed to delete FAQ');
+                console.error('Failed to delete FAQ:', error);
             }
         }
     };
@@ -114,8 +118,9 @@ export default function AdminFAQPage() {
                     { order: newFaqs[swapIndex].order })
             ]);
             fetchFaqs();
-        } catch (err) {
+        } catch (error) {
             setError('Failed to reorder FAQs');
+            console.error('Failed to reorder FAQs:', error);
         }
     };
 

@@ -1,13 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import { 
-    Mail, Phone, MapPin, Calendar, 
-    Clock, Save, X, Edit2, 
-    ArrowLeft, User, Send,
-    Award, FileText, Clock3
+    Edit2, 
+    ArrowLeft, Send
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -49,11 +47,7 @@ export default function StaffProfileClient({ id }: { id: string }) {
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('employment');
 
-    useEffect(() => {
-        fetchStaff();
-    }, [id]);
-
-    const fetchStaff = async () => {
+    const fetchStaff = useCallback(async () => {
         try {
             const token = localStorage.getItem('adminToken');
             const response = await axios.get(
@@ -64,13 +58,19 @@ export default function StaffProfileClient({ id }: { id: string }) {
             if (response.data.success) {
                 setStaff(response.data.data);
             }
-        } catch (error) {
+        } catch (err: unknown) {
+            const error = err as AxiosError<{ message: string }>;
+            console.error('Failed to fetch staff details:', error);
             toast.error('Failed to fetch staff details');
             router.push('/admin/staffs');
         } finally {
             setLoading(false);
         }
-    };
+    }, [id, router]);
+
+    useEffect(() => {
+        fetchStaff();
+    }, [fetchStaff]);
 
     if (loading) {
         return <div className="p-6">Loading...</div>;

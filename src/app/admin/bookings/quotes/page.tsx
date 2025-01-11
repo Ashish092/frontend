@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Search, Filter, ArrowUpDown, Eye, Edit, Trash2, Calendar } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { Search, ArrowUpDown, Eye, Edit } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
 
@@ -36,31 +36,7 @@ export default function QuotesPage() {
   const [sortField, setSortField] = useState<'date' | 'name'>('date');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
-  useEffect(() => {
-    fetchQuotes();
-  }, []);
-
-  useEffect(() => {
-    filterAndSortQuotes();
-  }, [searchTerm, statusFilter, sortField, sortDirection, quotes]);
-
-  const fetchQuotes = async () => {
-    try {
-      const response = await fetch('http://localhost:5000/api/quotes');
-      if (!response.ok) throw new Error('Failed to fetch quotes');
-      
-      const data = await response.json();
-      setQuotes(data.data);
-      setFilteredQuotes(data.data);
-      setLoading(false);
-    } catch (error) {
-      console.error('Error:', error);
-      toast.error('Failed to load quotes');
-      setLoading(false);
-    }
-  };
-
-  const filterAndSortQuotes = () => {
+  const filterAndSortQuotes = useCallback(() => {
     let filtered = [...quotes];
 
     // Apply search filter
@@ -91,6 +67,30 @@ export default function QuotesPage() {
     });
 
     setFilteredQuotes(filtered);
+  }, [quotes, searchTerm, statusFilter, sortField, sortDirection]);
+
+  useEffect(() => {
+    fetchQuotes();
+  }, []);
+
+  useEffect(() => {
+    filterAndSortQuotes();
+  }, [filterAndSortQuotes]);
+
+  const fetchQuotes = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/quotes');
+      if (!response.ok) throw new Error('Failed to fetch quotes');
+      
+      const data = await response.json();
+      setQuotes(data.data);
+      setFilteredQuotes(data.data);
+      setLoading(false);
+    } catch (error) {
+      console.error('Error:', error);
+      toast.error('Failed to load quotes');
+      setLoading(false);
+    }
   };
 
   const handleSort = (field: 'date' | 'name') => {

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import { 
     Users, 
     Calendar,
@@ -50,9 +50,10 @@ export default function AdminDashboard() {
             });
             setStats(response.data.data);
             setError(null);
-        } catch (err: any) {
-            console.error('Error fetching stats:', err);
-            setError(err.response?.data?.message || 'Failed to fetch dashboard stats');
+        } catch (err: unknown) {
+            const error = err as AxiosError<{ message: string }>;
+            console.error('Error fetching stats:', error);
+            setError(error.response?.data?.message || 'Failed to fetch dashboard stats');
         } finally {
             setLoading(false);
         }

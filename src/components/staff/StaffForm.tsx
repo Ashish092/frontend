@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Save } from 'lucide-react';
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import toast from 'react-hot-toast';
 
 interface StaffFormData {
@@ -22,6 +22,10 @@ interface StaffFormData {
         state: string;
         postcode: string;
     };
+}
+
+interface NestedObject {
+    [key: string]: string | number | boolean | NestedObject;
 }
 
 export default function StaffForm({ id }: { id?: string }) {
@@ -46,13 +50,7 @@ export default function StaffForm({ id }: { id?: string }) {
         }
     });
 
-    useEffect(() => {
-        if (id) {
-            fetchStaff();
-        }
-    }, [id]);
-
-    const fetchStaff = async () => {
+    const fetchStaff = useCallback(async () => {
         try {
             const token = localStorage.getItem('adminToken');
             const response = await axios.get(
@@ -64,17 +62,25 @@ export default function StaffForm({ id }: { id?: string }) {
                 const staff = response.data.data;
                 setFormData({
                     ...staff,
-                    staffId: staff.kioskCode, // Map kioskCode to staffId
+                    staffId: staff.kioskCode,
                     employmentStartDate: new Date(staff.employmentStartDate).toISOString().split('T')[0]
                 });
             }
-        } catch (error) {
+        } catch (err: unknown) {
+            const error = err as AxiosError;
+            console.error('Error fetching staff:', error);
             toast.error('Failed to fetch staff details');
             router.push('/admin/staffs');
         } finally {
             setLoading(false);
         }
-    };
+    }, [id, router]);
+
+    useEffect(() => {
+        if (id) {
+            fetchStaff();
+        }
+    }, [id, fetchStaff]);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
@@ -83,14 +89,9 @@ export default function StaffForm({ id }: { id?: string }) {
             setFormData(prev => ({
                 ...prev,
                 [parent]: {
-                    ...prev[parent as keyof typeof prev],
+                    ...(prev[parent as keyof StaffFormData] as NestedObject),
                     [child]: value
                 }
-            }));
-        } else if (name === 'department') {
-            setFormData(prev => ({
-                ...prev,
-                department: value.split(',').map(dept => dept.trim())
             }));
         } else {
             setFormData(prev => ({ ...prev, [name]: value }));
@@ -103,7 +104,7 @@ export default function StaffForm({ id }: { id?: string }) {
 
         const submitData = {
             ...formData,
-            kioskCode: formData.staffId // Map staffId back to kioskCode
+            kioskCode: formData.staffId
         };
 
         try {
@@ -124,7 +125,9 @@ export default function StaffForm({ id }: { id?: string }) {
                 router.push('/admin/staffs');
             }
         } catch (error) {
+            console.error('Error saving staff:', error);
             toast.error(`Failed to ${id ? 'update' : 'create'} staff`);
+
         } finally {
             setSaving(false);
         }

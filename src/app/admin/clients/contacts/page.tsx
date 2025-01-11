@@ -1,11 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import { 
     Search, 
-    Filter, 
     Plus, 
     Edit2, 
     Trash2, 
@@ -34,19 +33,14 @@ export default function ContactsPage() {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
-    const [tagFilter, setTagFilter] = useState('');
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
 
-    useEffect(() => {
-        fetchContacts();
-    }, [page, searchTerm, statusFilter, tagFilter]);
-
-    const fetchContacts = async () => {
+    const fetchContacts = useCallback(async () => {
         try {
             const token = localStorage.getItem('adminToken');
             const response = await axios.get(
-                `http://localhost:5000/api/contacts?page=${page}&search=${searchTerm}&status=${statusFilter}&tag=${tagFilter}`,
+                `http://localhost:5000/api/contacts?page=${page}&search=${searchTerm}&status=${statusFilter}`,
                 {
                     headers: { Authorization: `Bearer ${token}` }
                 }
@@ -57,11 +51,16 @@ export default function ContactsPage() {
                 setTotalPages(response.data.pagination.pages);
             }
         } catch (error) {
+            console.error('Failed to fetch contacts:', error);
             toast.error('Failed to fetch contacts');
         } finally {
             setLoading(false);
         }
-    };
+    }, [page, searchTerm, statusFilter]);
+
+    useEffect(() => {
+        fetchContacts();
+    }, [fetchContacts]);
 
     const handleDelete = async (id: string) => {
         if (!confirm('Are you sure you want to delete this contact?')) return;
@@ -75,6 +74,7 @@ export default function ContactsPage() {
             toast.success('Contact deleted successfully');
             fetchContacts();
         } catch (error) {
+            console.error('Failed to delete contact:', error);
             toast.error('Failed to delete contact');
         }
     };
