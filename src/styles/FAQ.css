@@ -1,0 +1,21 @@
+.faq-transition {
+    transition: all 0.3s ease-in-out;
+}
+
+.faq-answer {
+    max-height: 0;
+    overflow: hidden;
+}
+
+.faq-answer.active {
+    max-height: 500px;
+    padding: 1rem;
+}
+
+.faq-icon {
+    transition: transform 0.3s ease;
+}
+
+.faq-icon.active {
+    transform: rotate(180deg);
+} 
