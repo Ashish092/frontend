@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import AdminSidebar from '@/components/layout/AdminSidebar';
 import axios from 'axios';
+import AdminAuthMiddleware from '@/middleware/adminAuth';
 
 export default function AdminLayout({
   children,

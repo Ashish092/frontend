@@ -10,6 +10,7 @@ import {
     DollarSign,
     Loader2
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 interface Stats {
     totalBookings: number;
@@ -35,9 +36,17 @@ interface Stats {
 }
 
 export default function AdminDashboard() {
+    const router = useRouter();
     const [stats, setStats] = useState<Stats | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        const token = localStorage.getItem('adminToken');
+        if (!token) {
+            router.push('/admin/login');
+        }
+    }, [router]);
 
     useEffect(() => {
         fetchStats();
