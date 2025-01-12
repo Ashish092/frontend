@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { Briefcase, MapPin, Clock, DollarSign, Search } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import axios, { AxiosError } from 'axios';
+import { API_URL } from '@/config/api';
 
 interface Career {
   _id: string;
@@ -35,7 +36,7 @@ export default function CareerPage() {
   useEffect(() => {
     const fetchCareers = async () => {
       try {
-        const response = await axios.get('REACT_APP_API_URL');
+        const response = await axios.get(`${API_URL}/api/careers`);
         setCareers(response.data);
         setError(null);
       } catch (err: unknown) {
