@@ -35,7 +35,7 @@ export default function CareerPage() {
   useEffect(() => {
     const fetchCareers = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/api/careers');
+        const response = await axios.get('REACT_APP_API_URL');
         setCareers(response.data);
         setError(null);
       } catch (err: unknown) {
