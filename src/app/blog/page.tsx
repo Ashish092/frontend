@@ -6,6 +6,7 @@ import MainLayout from '@/components/layout/MainLayout';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Search } from 'lucide-react';
+import { API_URL } from '@/config/api';
 
 interface Blog {
     _id: string;
@@ -30,7 +31,7 @@ export default function BlogPage() {
     useEffect(() => {
         const fetchBlogs = async () => {
             try {
-                const response = await axios.get('http://localhost:5000/api/blogs');
+                const response = await axios.get(`${API_URL}/api/blogs`);
                 console.log('Blogs response:', response.data);
                 setBlogs(response.data);
             } catch (err: unknown) {

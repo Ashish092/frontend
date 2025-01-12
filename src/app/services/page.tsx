@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
+import { API_URL } from '@/config/api'
 
 // Define the Service type
 interface Service {
@@ -26,7 +27,7 @@ export default function ServicesPage() {
   useEffect(() => {
     const fetchServices = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/services')
+        const response = await fetch(`${API_URL}/api/services`)
         const data = await response.json()
         
         if (data.success) {

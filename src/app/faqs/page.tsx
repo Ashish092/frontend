@@ -4,6 +4,7 @@ import MainLayout from '@/components/layout/MainLayout'
 import { Search } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import axios from 'axios'
+import { API_URL } from '@/config/api'
 
 interface FAQ {
     _id: string
@@ -25,7 +26,7 @@ export default function FAQsPage() {
     useEffect(() => {
         const fetchFaqs = async () => {
             try {
-                const response = await axios.get('http://localhost:5000/api/faqs')
+                const response = await axios.get(`${API_URL}/api/faqs`)
                 setFaqs(response.data)
             } catch (err) {
                 setError('Failed to fetch FAQs')
