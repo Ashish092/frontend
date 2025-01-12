@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import axios, { AxiosError } from 'axios';
+import { API_URL } from '@/config/api';
 
 export default function AdminLoginPage() {
     const router = useRouter();
@@ -19,7 +20,7 @@ export default function AdminLoginPage() {
         setError('');
 
         try {
-            const response = await axios.post('http://localhost:5000/api/admin/login', formData);
+            const response = await axios.post(`${API_URL}/api/admin/login`, formData);
             
             if (response.data.success) {
                 localStorage.setItem('adminToken', response.data.token);
