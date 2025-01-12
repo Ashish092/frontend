@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import AdminSidebar from '@/components/layout/AdminSidebar';
+import { API_URL } from '@/config/api';
 import axios from 'axios';
-import AdminAuthMiddleware from '@/middleware/adminAuth';
 
 export default function AdminLayout({
   children,
@@ -33,7 +33,7 @@ export default function AdminLayout({
           return;
         }
 
-        const response = await axios.get('http://localhost:5000/api/admin/verify', {
+        const response = await axios.get(`${API_URL}/api/admin/verify`, {
           headers: { Authorization: `Bearer ${token}` }
         });
 
