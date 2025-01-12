@@ -16,6 +16,7 @@ import {
     AlertCircle
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { API_URL } from '@/config/api';
 
 interface Invoice {
     _id: string;
@@ -48,7 +49,7 @@ export default function BookingInvoicesPage() {
         try {
             const token = localStorage.getItem('adminToken');
             const response = await axios.get(
-                'http://localhost:5000/api/invoices',
+                `${API_URL}/api/invoices`,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
 

@@ -8,6 +8,7 @@ import {
     ArrowLeft, Edit, Trash2, Calendar, Clock, MapPin, 
     Mail, Phone, CheckCircle2 
 } from 'lucide-react';
+import { API_URL } from '@/config/api';
 
 interface ManualBooking {
     _id: string;
@@ -52,7 +53,7 @@ export default function ViewBookingClient({ id }: ViewBookingClientProps) {
             try {
                 const token = localStorage.getItem('adminToken');
                 const response = await axios.get(
-                    `http://localhost:5000/api/manual-bookings/${id}`,
+                    `${API_URL}/api/manual-bookings/${id}`,
                     { headers: { Authorization: `Bearer ${token}` } }
                 );
                 setBooking(response.data);

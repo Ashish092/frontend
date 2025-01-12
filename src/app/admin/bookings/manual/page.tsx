@@ -7,6 +7,7 @@ import {
   Plus, Search, ArrowUpDown, Eye, Edit, Trash2 
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { API_URL } from '@/config/api';
 
 interface ManualBooking {
   _id: string;
@@ -91,7 +92,7 @@ export default function ManualBookingsPage() {
   const fetchBookings = async () => {
     try {
       const token = localStorage.getItem('adminToken');
-      const response = await axios.get('http://localhost:5000/api/manual-bookings', {
+      const response = await axios.get(`${API_URL}/api/manual-bookings`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setBookings(response.data);

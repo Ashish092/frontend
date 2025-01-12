@@ -15,6 +15,7 @@ import {
     Loader2
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { API_URL } from '@/config/api';
 
 interface Contact {
     _id: string;
@@ -40,7 +41,7 @@ export default function ContactsPage() {
         try {
             const token = localStorage.getItem('adminToken');
             const response = await axios.get(
-                `http://localhost:5000/api/contacts?page=${page}&search=${searchTerm}&status=${statusFilter}`,
+                `${API_URL}/api/contacts?page=${page}&search=${searchTerm}&status=${statusFilter}`,
                 {
                     headers: { Authorization: `Bearer ${token}` }
                 }

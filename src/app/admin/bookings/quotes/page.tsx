@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Search, ArrowUpDown, Eye, Edit } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
+import { API_URL } from '@/config/api';
 
 interface Quote {
   _id: string;
@@ -79,7 +80,7 @@ export default function QuotesPage() {
 
   const fetchQuotes = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/quotes');
+      const response = await fetch(`${API_URL}/api/quotes`);
       if (!response.ok) throw new Error('Failed to fetch quotes');
       
       const data = await response.json();

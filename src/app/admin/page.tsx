@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import axios, { AxiosError } from 'axios';
+import { API_URL } from '@/config/api';
 import { 
     Users, 
     Calendar,
@@ -45,7 +46,7 @@ export default function AdminDashboard() {
     const fetchStats = async () => {
         try {
             const token = localStorage.getItem('adminToken');
-            const response = await axios.get('http://localhost:5000/api/admin/stats', {
+            const response = await axios.get(`${API_URL}/api/admin/stats`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setStats(response.data.data);
